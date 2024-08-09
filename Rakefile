@@ -43,7 +43,7 @@ Rake::TestTask.new(:base_test) do |t|
                  end
   t.verbose = true
   t.warning = true
-  t.ruby_opts = ["-Eascii-8bit:ascii-8bit"]
+  t.ruby_opts = ["-Eascii-8bit:ascii-8bit --disable=frozen_string_literal"]
 end
 
 task :parallel_test do

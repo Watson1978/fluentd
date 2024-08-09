@@ -1019,6 +1019,8 @@ module Fluent
         fluentd_spawn_cmd = [ServerEngine.ruby_bin_path]
       end
 
+      fluentd_spawn_cmd << '--disable=frozen_string_literal'
+
       rubyopt = ENV['RUBYOPT']
       if rubyopt
         encodes, others = rubyopt.split(' ').partition { |e| e.match?(RUBY_ENCODING_OPTIONS_REGEX) }
