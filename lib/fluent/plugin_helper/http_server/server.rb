@@ -78,6 +78,7 @@ module Fluent
         HttpServer::Methods::ALL.map { |e| e.downcase.to_sym }.each do |name|
           define_method(name) do |path, app = nil, &block|
             unless path.end_with?('/')
+              path = path.frozen? ? path.dup : path
               path << '/'
             end
 
