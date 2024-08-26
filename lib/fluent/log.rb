@@ -458,15 +458,15 @@ module Fluent
     CachedLog = Struct.new(:msg, :time)
 
     def ignore_repeated_log?(key, time, message)
-      cached_log = Thread.current[key]
+      cached_log = Thread.current.thread_variable_get(key)
       return false if cached_log.nil?
       (cached_log.msg == message) && (time - cached_log.time <= @ignore_repeated_log_interval)
     end
 
     def ignore_same_log?(time, message)
-      cached_log = Thread.current[:last_same_log]
+      cached_log = Thread.current.thread_variable_get(:last_same_log)
       if cached_log.nil?
-        Thread.current[:last_same_log] = {message => time}
+        Thread.current.thread_variable_set(:last_same_log, {message => time})
         return false
       end
 
@@ -492,7 +492,7 @@ module Fluent
     end
 
     def suppress_stacktrace?(backtrace)
-      cached_log = Thread.current[:last_repeated_stacktrace]
+      cached_log = Thread.current.thread_variable_get(:last_repeated_stacktrace)
       return false if cached_log.nil?
       cached_log.msg == backtrace
     end
@@ -508,12 +508,12 @@ module Fluent
           return
         elsif @suppress_repeated_stacktrace && suppress_stacktrace?(backtrace)
           puts ["  ", line, 'suppressed same stacktrace'].join
-          Thread.current[:last_repeated_stacktrace] = CachedLog.new(backtrace, time) if @ignore_repeated_log_interval
+          Thread.current.thread_variable_set(:last_repeated_stacktrace, CachedLog.new(backtrace, time)) if @ignore_repeated_log_interval
         else
           backtrace.each { |msg|
             puts ["  ", line, msg].join
           }
-          Thread.current[:last_repeated_stacktrace] = CachedLog.new(backtrace, time) if @suppress_repeated_stacktrace
+          Thread.current.thread_variable_set(:last_repeated_stacktrace, CachedLog.new(backtrace, time)) if @suppress_repeated_stacktrace
         end
       else
         r = {
@@ -528,10 +528,10 @@ module Fluent
           return
         elsif @suppress_repeated_stacktrace && suppress_stacktrace?(backtrace)
           r['message'] = 'suppressed same stacktrace'
-          Thread.current[:last_repeated_stacktrace] = CachedLog.new(backtrace, time) if @ignore_repeated_log_interval
+          Thread.current.thread_variable_set(:last_repeated_stacktrace, CachedLog.new(backtrace, time)) if @ignore_repeated_log_interval
         else
           r['message'] = backtrace.join("\n")
-          Thread.current[:last_repeated_stacktrace] = CachedLog.new(backtrace, time) if @suppress_repeated_stacktrace
+          Thread.current.thread_variable_set(:last_repeated_stacktrace, CachedLog.new(backtrace, time)) if @suppress_repeated_stacktrace
         end
 
         puts Yajl.dump(r)
@@ -578,7 +578,7 @@ module Fluent
         if ignore_repeated_log?(:last_repeated_log, time, message)
           return nil, nil
         else
-          Thread.current[:last_repeated_log] = CachedLog.new(message, time)
+          Thread.current.thread_variable_set(:last_repeated_log, CachedLog.new(message, time))
         end
       end
 

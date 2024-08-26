@@ -24,7 +24,7 @@ class LogTest < Test::Unit::TestCase
   def teardown
     @log_device.reset
     Timecop.return
-    Thread.current[:last_repeated_stacktrace] = nil
+    Thread.current.thread_variable_set(:last_repeated_stacktrace, nil)
     begin
       FileUtils.rm_rf(@tmp_dir)
     rescue Errno::EACCES
@@ -432,7 +432,7 @@ class LogTest < Test::Unit::TestCase
 
   sub_test_case "ignore_same_log_interval" do
     teardown do
-      Thread.current[:last_same_log] = nil
+      Thread.current.thread_variable_set(:last_same_log, nil)
     end
 
     def test_same_message
@@ -489,7 +489,7 @@ class LogTest < Test::Unit::TestCase
       logger.info "Over max size!"
 
       # The newest cache and the latest caches in `ignore_same_log_interval` should exist.
-      assert { Thread.current[:last_same_log].size == ignore_same_log_interval + 1 }
+      assert { Thread.current.thread_variable_get(:last_same_log).size == ignore_same_log_interval + 1 }
     end
 
     def test_clear_on_max_size
@@ -507,7 +507,7 @@ class LogTest < Test::Unit::TestCase
       logger.info "Over max size!"
 
       # Can't reject old logs, so all cache should be cleared and only the newest should exist.
-      assert { Thread.current[:last_same_log].size == 1 }
+      assert { Thread.current.thread_variable_get(:last_same_log).size == 1 }
     end
   end
 
@@ -723,7 +723,7 @@ class PluginLoggerTest < Test::Unit::TestCase
   def teardown
     @log_device.reset
     Timecop.return
-    Thread.current[:last_repeated_stacktrace] = nil
+    Thread.current.thread_variable_set(:last_repeated_stacktrace, nil)
   end
 
   def test_initialize

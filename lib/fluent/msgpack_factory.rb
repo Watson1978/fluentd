@@ -96,13 +96,13 @@ module Fluent
     end
 
     def self.thread_local_msgpack_packer
-      Thread.current[:local_msgpack_packer] ||= MessagePackFactory.engine_factory.packer
+      Thread.current.thread_variable_set(:local_msgpack_packer, Thread.current.thread_variable_get(:local_msgpack_packer) || MessagePackFactory.engine_factory.packer)
     end
 
     def self.thread_local_msgpack_unpacker
-      unpacker = Thread.current[:local_msgpack_unpacker]
+      unpacker = Thread.current.thread_variable_get(:local_msgpack_unpacker)
       if unpacker.nil?
-        return Thread.current[:local_msgpack_unpacker] = MessagePackFactory.engine_factory.unpacker
+        return Thread.current.thread_variable_set(:local_msgpack_unpacker, MessagePackFactory.engine_factory.unpacker)
       end
       unpacker.reset
       unpacker

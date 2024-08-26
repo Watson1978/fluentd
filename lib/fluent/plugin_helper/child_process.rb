@@ -43,11 +43,11 @@ module Fluent
 
       def child_process_running?
         # checker for code in callback of child_process_execute
-        ::Thread.current[:_fluentd_plugin_helper_child_process_running] || false
+        ::Thread.current.thread_variable_get(:_fluentd_plugin_helper_child_process_running) || false
       end
 
       def child_process_id
-        ::Thread.current[:_fluentd_plugin_helper_child_process_pid]
+        ::Thread.current.thread_variable_get(:_fluentd_plugin_helper_child_process_pid)
       end
 
       def child_process_exist?(pid)
@@ -132,7 +132,7 @@ module Fluent
         @_child_process_mutex.synchronize{ @_child_process_processes.keys }.each do |pid|
           process_info = @_child_process_processes[pid]
           if process_info
-            process_info.thread[:_fluentd_plugin_helper_child_process_running] = false
+            process_info.thread.thread_variable_set(:_fluentd_plugin_helper_child_process_running, false)
           end
         end
 
@@ -350,8 +350,8 @@ module Fluent
           process_info.writeio&.close rescue nil
           process_info.stderrio&.close rescue nil
         end
-        thread[:_fluentd_plugin_helper_child_process_running] = true
-        thread[:_fluentd_plugin_helper_child_process_pid] = pid
+        thread.thread_variable_set(:_fluentd_plugin_helper_child_process_running, true)
+        thread.thread_variable_set(:_fluentd_plugin_helper_child_process_pid, pid)
         pinfo = ProcessInfo.new(
           title, thread, pid,
           readio, readio_in_use, writeio, writeio_in_use, stderrio, stderrio_in_use,

@@ -111,11 +111,11 @@ module Fluent::Plugin
     end
 
     def connection_cache_id_for_thread
-      Thread.current[connection_cache_id_thread_key]
+      Thread.current.thread_variable_get(connection_cache_id_thread_key)
     end
 
     def connection_cache_id_for_thread=(id)
-      Thread.current[connection_cache_id_thread_key] = id
+      Thread.current.thread_variable_set(connection_cache_id_thread_key, id)
     end
 
     def initialize

@@ -58,13 +58,13 @@ class ThreadTest < Test::Unit::TestCase
       m2.lock; m2.unlock
       assert_equal 1, d1._threads.size
 
-      assert_equal :test1, t[:_fluentd_plugin_helper_thread_title]
-      assert t[:_fluentd_plugin_helper_thread_running]
+      assert_equal :test1, t.thread_variable_get(:_fluentd_plugin_helper_thread_title)
+      assert t.thread_variable_get(:_fluentd_plugin_helper_thread_running)
       assert !d1._threads.empty?
 
       m1.unlock
 
-      while t[:_fluentd_plugin_helper_thread_running]
+      while t.thread_variable_get(:_fluentd_plugin_helper_thread_running)
         Thread.pass
       end
     end
@@ -116,7 +116,7 @@ class ThreadTest < Test::Unit::TestCase
 
       d1.stop
       Thread.pass while m1.locked?
-      assert !t[:_fluentd_plugin_helper_thread_running]
+      assert !t.thread_variable_get(:_fluentd_plugin_helper_thread_running)
       assert t.stop?
     end
 
@@ -145,7 +145,7 @@ class ThreadTest < Test::Unit::TestCase
       assert !d1._threads.empty?
 
       d1.stop
-      assert !t[:_fluentd_plugin_helper_thread_running]
+      assert !t.thread_variable_get(:_fluentd_plugin_helper_thread_running)
       assert t.alive?
 
       d1.shutdown

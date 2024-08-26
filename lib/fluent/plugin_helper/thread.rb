@@ -31,26 +31,26 @@ module Fluent
 
       def thread_current_running?
         # checker for code in callback of thread_create
-        ::Thread.current[:_fluentd_plugin_helper_thread_running] || false
+        ::Thread.current.thread_variable_get(:_fluentd_plugin_helper_thread_running) || false
       end
 
       def thread_wait_until_start
-        until @_threads_mutex.synchronize{ @_threads.values.reduce(true){|r,t| r && t[:_fluentd_plugin_helper_thread_started] } }
+        until @_threads_mutex.synchronize{ @_threads.values.reduce(true){|r,t| r && t.thread_variable_get(:_fluentd_plugin_helper_thread_started) } }
           sleep 0.1
         end
       end
 
       def thread_wait_until_stop
         timeout_at = Fluent::Clock.now + THREAD_SHUTDOWN_HARD_TIMEOUT_IN_TESTS
-        until @_threads_mutex.synchronize{ @_threads.values.reduce(true){|r,t| r && !t[:_fluentd_plugin_helper_thread_running] } }
+        until @_threads_mutex.synchronize{ @_threads.values.reduce(true){|r,t| r && !t.thread_variable_get(:_fluentd_plugin_helper_thread_running) } }
           break if Fluent::Clock.now > timeout_at
           sleep 0.1
         end
         @_threads_mutex.synchronize{ @_threads.values }.each do |t|
           if t.alive?
-            puts "going to kill the thread still running: #{t[:_fluentd_plugin_helper_thread_title]}"
+            puts "going to kill the thread still running: #{t.thread_variable_get(:_fluentd_plugin_helper_thread_title)}"
             t.kill rescue nil
-            t[:_fluentd_plugin_helper_thread_running] = false
+            t.thread_variable_set(:_fluentd_plugin_helper_thread_running, false)
           end
         end
       end
@@ -71,9 +71,9 @@ module Fluent
           m.lock # run thread after that thread is successfully set into @_threads
           m.unlock
           thread_exit = false
-          ::Thread.current[:_fluentd_plugin_helper_thread_title] = title
-          ::Thread.current[:_fluentd_plugin_helper_thread_started] = true
-          ::Thread.current[:_fluentd_plugin_helper_thread_running] = true
+          ::Thread.current.thread_variable_set(:_fluentd_plugin_helper_thread_title, title)
+          ::Thread.current.thread_variable_set(:_fluentd_plugin_helper_thread_started, true)
+          ::Thread.current.thread_variable_set(:_fluentd_plugin_helper_thread_running, true)
           begin
             yield
             thread_exit = true
@@ -85,7 +85,7 @@ module Fluent
             @_threads_mutex.synchronize do
               @_threads.delete(::Thread.current.object_id)
             end
-            ::Thread.current[:_fluentd_plugin_helper_thread_running] = false
+            ::Thread.current.thread_variable_set(:_fluentd_plugin_helper_thread_running, false)
             if ::Thread.current.alive? && !thread_exit
               log.warn "thread doesn't exit correctly (killed or other reason)", plugin: self.class, title: title, thread: ::Thread.current, error: $!
             end
@@ -101,17 +101,17 @@ module Fluent
       end
 
       def thread_exist?(title)
-        @_threads.values.count{|thread| title == thread[:_fluentd_plugin_helper_thread_title] } > 0
+        @_threads.values.count{|thread| title == thread.thread_variable_get(:_fluentd_plugin_helper_thread_title) } > 0
       end
 
       def thread_started?(title)
-        t = @_threads.values.find{|thread| title == thread[:_fluentd_plugin_helper_thread_title] }
-        t && t[:_fluentd_plugin_helper_thread_started]
+        t = @_threads.values.find{|thread| title == thread.thread_variable_get(:_fluentd_plugin_helper_thread_title) }
+        t && t.thread_variable_get(:_fluentd_plugin_helper_thread_started)
       end
 
       def thread_running?(title)
-        t = @_threads.values.find{|thread| title == thread[:_fluentd_plugin_helper_thread_title] }
-        t && t[:_fluentd_plugin_helper_thread_running]
+        t = @_threads.values.find{|thread| title == thread.thread_variable_get(:_fluentd_plugin_helper_thread_title) }
+        t && t.thread_variable_get(:_fluentd_plugin_helper_thread_running)
       end
 
       def initialize
@@ -126,7 +126,7 @@ module Fluent
         wakeup_threads = []
         @_threads_mutex.synchronize do
           @_threads.each_value do |thread|
-            thread[:_fluentd_plugin_helper_thread_running] = false
+            thread.thread_variable_set(:_fluentd_plugin_helper_thread_running, false)
             wakeup_threads << thread if thread.alive? && thread.status == "sleep"
           end
         end
