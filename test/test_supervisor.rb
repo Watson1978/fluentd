@@ -322,6 +322,8 @@ class SupervisorTest < ::Test::Unit::TestCase
     Process.kill :TERM, Process.pid
     Process.kill :CONT, Process.pid
 
+    sleep 1
+
     assert{ not File.exist?(@sigdump_path) }
   ensure
     File.delete(@sigdump_path) if File.exist?(@sigdump_path)

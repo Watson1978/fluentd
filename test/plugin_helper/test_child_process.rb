@@ -571,6 +571,7 @@ class ChildProcessTest < Test::Unit::TestCase
       io = IO.popen([["cat", "caaaaaaaaaaat"], '-'])
       process_naming_enabled = (IO.popen(["ps", "opid,cmd"]){|_io| _io.readlines }.count{|line| line.include?("caaaaaaaaaaat") } > 0)
       Process.kill(:TERM, io.pid) rescue nil
+      sleep 1
       io.close rescue nil
 
       # Does TravisCI prohibit process renaming?
@@ -724,6 +725,7 @@ class ChildProcessTest < Test::Unit::TestCase
         pid = @d.instance_eval { child_process_id }
         sleep 1
         Process.kill(:QUIT, pid)
+        sleep 1
         str = readio.read.chomp rescue nil # empty string before EOF
         block_exits = true
       end
