@@ -36,5 +36,8 @@ jobs:
         run: sudo apt-get install libgmp3-dev libcap-ng-dev
       - name: Install dependencies
         run: bundle install
+      - name: Expand port numbers
+        if: runner.os == 'Windows'
+        run: netsh int ipv4 set dynamicport tcp start=60000 num=5000
       - name: Run tests
         run: bundle exec rake test TESTOPTS="-v --no-show-detail-immediately"
