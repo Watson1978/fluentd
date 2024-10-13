@@ -395,7 +395,7 @@ class SupervisorTest < ::Test::Unit::TestCase
   def test_supervisor_event_dump_windows
     omit "Only for Windows, alternative to UNIX signals" unless Fluent.windows?
 
-    ENV['SIGDUMP_PATH'] = TMP_DIR + "/sigdump.log"
+    ENV['SIGDUMP_PATH'] = @tmp_dir + "/sigdump.log"
 
     server = DummyServer.new
     def server.config
@@ -412,7 +412,7 @@ class SupervisorTest < ::Test::Unit::TestCase
       server.stop_windows_event_thread
     end
 
-    result_filepaths = Dir.glob("#{TMP_DIR}/*")
+    result_filepaths = Dir.glob("#{@tmp_dir}/*")
     assert {result_filepaths.length > 0}
   ensure
     ENV.delete('SIGDUMP_PATH')
