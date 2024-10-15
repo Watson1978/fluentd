@@ -30,8 +30,6 @@ class SupervisorTest < ::Test::Unit::TestCase
   end
 
   def setup
-    GC.start
-
     @stored_global_logger = $log
     @tmp_dir = tmp_dir
     @tmp_root_dir = File.join(@tmp_dir, 'root')
