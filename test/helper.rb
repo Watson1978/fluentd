@@ -1,3 +1,6 @@
+require 'objspace'
+ObjectSpace.trace_object_allocations_start
+
 # simplecov must be loaded before any of target code
 if ENV['SIMPLE_COV']
   require 'simplecov'
