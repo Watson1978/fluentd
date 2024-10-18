@@ -38,3 +38,6 @@ jobs:
         run: bundle install
       - name: Run tests
         run: bundle exec rake test TESTOPTS="-v --no-show-detail-immediately"
+      - name: TIME_WAIT
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: netstat -aon | grep TIME_WAIT | wc
