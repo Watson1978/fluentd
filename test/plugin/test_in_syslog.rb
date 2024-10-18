@@ -5,7 +5,7 @@ require 'fluent/plugin/in_syslog'
 class SyslogInputTest < Test::Unit::TestCase
   def setup
     Fluent::Test.setup
-    @port = unused_port
+    @port = unused_port(protocol: :udp)
   end
 
   def teardown
@@ -77,6 +77,7 @@ EOS
 
   # For backward compat
   def test_respect_protocol_type_than_transport
+    @port = unused_port(protocol: :tcp)
     d = create_driver([ipv4_config, "<transport tcp> \n</transport>", "protocol_type udp"].join("\n"))
     tests = create_test_case
 
@@ -158,6 +159,7 @@ EOS
   end
 
   def test_msg_size_with_tcp
+    @port = unused_port(protocol: :tcp)
     d = create_driver([ipv4_config, "<transport tcp> \n</transport>"].join("\n"))
     tests = create_test_case
 
@@ -189,6 +191,7 @@ EOS
   end
 
   def test_msg_size_with_same_tcp_connection
+    @port = unused_port(protocol: :tcp)
     d = create_driver([ipv4_config, "<transport tcp> \n</transport>"].join("\n"))
     tests = create_test_case
 
@@ -363,6 +366,7 @@ EOS
     end
 
     def test_msg_size_with_same_tcp_connection
+      @port = unused_port(protocol: :tcp)
       d = create_driver([ipv4_config, "<transport tcp> \n</transport>", 'frame_type octet_count'].join("\n"))
       tests = create_test_case
 
@@ -478,6 +482,7 @@ EOS
   end
 
   def test_send_keepalive_packet_can_be_enabled
+    @port = unused_port(protocol: :tcp)
     addr = "127.0.0.1"
     d = create_driver(ipv4_config + %[
       <transport tcp>
