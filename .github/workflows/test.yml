@@ -31,12 +31,10 @@ jobs:
         uses: ruby/setup-ruby@f26937343756480a8cb3ae1f623b9c8d89ed6984 # v1.196.0
         with:
           ruby-version: ${{ matrix.ruby-version }}
+          bundler: default
       - name: Install addons
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: sudo apt-get install libgmp3-dev libcap-ng-dev
-      - name: Update RubyGems
-        if: ${{ matrix.ruby-version != '2.7' }}
-        run: gem update --system
       - name: Install dependencies
         run: bundle install
       - name: Versions
