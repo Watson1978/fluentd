@@ -34,6 +34,9 @@ jobs:
       - name: Install addons
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: sudo apt-get install libgmp3-dev libcap-ng-dev
+      - name: Update RubyGems
+        if: ${{ matrix.ruby-version != '2.7' }}
+        run: gem update --system
       - name: Install dependencies
         run: bundle install
       - name: Versions
