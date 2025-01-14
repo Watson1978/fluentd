@@ -149,7 +149,10 @@ module Fluent::Plugin
               router.emit(tag, time, record)
             end
           end
-          buf.slice!(0, pos) if pos > 0
+          if pos > 0
+            buf = buf[pos..]
+            conn.buffer = buf
+          end
           # If the buffer size exceeds the limit here, it means that the next message will definitely exceed the limit.
           # So we should clear the buffer here. Otherwise, it will keep storing useless data until the next delimiter comes.
           if !@message_length_limit.nil? && @message_length_limit < buf.bytesize
@@ -198,7 +201,10 @@ module Fluent::Plugin
             end
           end
           router.emit_stream(@tag, es)
-          buf.slice!(0, pos) if pos > 0
+          if pos > 0
+            buf = buf[pos..]
+            conn.buffer = buf
+          end
           # If the buffer size exceeds the limit here, it means that the next message will definitely exceed the limit.
           # So we should clear the buffer here. Otherwise, it will keep storing useless data until the next delimiter comes.
           if !@message_length_limit.nil? && @message_length_limit < buf.bytesize

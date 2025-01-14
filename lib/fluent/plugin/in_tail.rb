@@ -1057,8 +1057,8 @@ module Fluent::Plugin
             # See https://github.com/fluent/fluentd/pull/2527
             @buffer.freeze
             slice_position = idx + 1
-            rbuf = @buffer.slice(0, slice_position)
-            @buffer = @buffer.slice(slice_position, @buffer.size - slice_position)
+            rbuf = @buffer[0, slice_position]
+            @buffer = @buffer[slice_position..]
             idx = @buffer.index(@eol)
 
             is_long_line = @max_line_size && (

@@ -780,7 +780,7 @@ module Fluent
               @mutex.synchronize do
                 # Consider write_nonblock with {exception: false} when IO::WaitWritable error happens frequently.
                 written_bytes = @_handler_socket.write_nonblock(@_handler_write_buffer)
-                @_handler_write_buffer.slice!(0, written_bytes)
+                @_handler_write_buffer = @_handler_write_buffer[written_bytes..]
               end
 
               # No need to call `super` in a synchronized context because TLSServer doesn't use the inner buffer(::IO::Buffer) of Coolio::IO.

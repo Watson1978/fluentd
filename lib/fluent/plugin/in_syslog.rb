@@ -212,7 +212,10 @@ module Fluent::Plugin
               message_handler(msg, conn)
             end
           end
-          buffer.slice!(0, pos) if pos > 0
+          if pos > 0
+            buffer = buffer[pos..]
+            conn.buffer = buffer
+          end
         end
       end
     end

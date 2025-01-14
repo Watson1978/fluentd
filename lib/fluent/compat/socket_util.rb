@@ -82,7 +82,7 @@ module Fluent
             @callback.call(msg, @addr)
             pos = i + @delimiter.length
           end
-          @buffer.slice!(0, pos) if pos > 0
+          @buffer = @buffer[pos..] if pos > 0
         rescue => e
           @log.error "unexpected error", error: e
           close
