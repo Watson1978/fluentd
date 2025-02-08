@@ -1053,13 +1053,16 @@ module Fluent::Plugin
           has_skipped_line = false
 
           until idx.nil?
-            # Using freeze and slice is faster than slice!
-            # See https://github.com/fluent/fluentd/pull/2527
-            @buffer.freeze
             slice_position = idx + 1
-            rbuf = @buffer.slice(0, slice_position)
-            @buffer = @buffer.slice(slice_position, @buffer.size - slice_position)
-            idx = @buffer.index(@eol)
+            if slice_position == @buffer.bytesize
+              rbuf = @buffer
+              @buffer = ''.force_encoding(@from_encoding)
+              idx = nil
+            else
+              rbuf = @buffer.slice(0, slice_position)
+              @buffer = @buffer.slice(slice_position, @buffer.size - slice_position)
+              idx = @buffer.index(@eol)
+            end
 
             is_long_line = @max_line_size && (
               @skip_current_line || rbuf.bytesize > @max_line_size
@@ -1211,7 +1214,8 @@ module Fluent::Plugin
                     @start_reading_time ||= Fluent::Clock.now
                     group_watcher&.update_reading_time(@path)
 
-                    data = io.readpartial(BYTES_TO_READ, iobuf)
+                    data = io.readline(BYTES_TO_READ)
+                    data.force_encoding('ASCII-8BIT')
                     @eof = false
                     @number_bytes_read += data.bytesize
                     @fifo << data
@@ -1280,7 +1284,9 @@ module Fluent::Plugin
             end
           else
             @io ||= open
+            start = Time.now
             yield @io
+            p Time.now - start
             @eof = true if @io.nil?
           end
         rescue WatcherSetupError => e
