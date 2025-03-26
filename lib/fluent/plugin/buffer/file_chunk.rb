@@ -253,6 +253,7 @@ module Fluent
               m: (update ? Fluent::Clock.real_now : @modified_at),
           })
           bin = Fluent::MessagePackFactory.thread_local_msgpack_packer.pack(data).full_pack
+          data.clear
           size = [bin.bytesize].pack('N')
           @meta.seek(0, IO::SEEK_SET)
           @meta.write(BUFFER_HEADER + size + bin)
