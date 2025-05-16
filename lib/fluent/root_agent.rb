@@ -86,7 +86,6 @@ module Fluent
       @without_source = system_config.without_source || false
       @source_only_mode = SourceOnlyMode.new(system_config.with_source_only, start_in_parallel)
       @source_only_buffer_agent = nil
-      @enable_input_metrics = system_config.enable_input_metrics || false
 
       suppress_interval(system_config.emit_error_log_interval) unless system_config.emit_error_log_interval.nil?
     end
@@ -414,9 +413,7 @@ module Fluent
       input.context_router = @event_router
       input.configure(conf)
       input.event_emitter_apply_source_only if @source_only_mode.enabled?
-      if @enable_input_metrics
-        @event_router.add_metric_callbacks(input.plugin_id, Proc.new {|es| input.metric_callback(es) })
-      end
+      @event_router.add_metric_callbacks(input.plugin_id, Proc.new {|es| input.metric_callback(es) })
       @inputs << input
 
       input
