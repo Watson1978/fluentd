@@ -1119,6 +1119,7 @@ module Fluent
           if @retry # success to flush chunks in retries
             if secondary
               log.warn "retry succeeded by secondary.", chunk_id: dump_unique_id_hex(chunk_id)
+              puts "!" * 80
               @secondary_chunk_count_metrics.inc
             else
               log.warn "retry succeeded.", chunk_id: dump_unique_id_hex(chunk_id)
