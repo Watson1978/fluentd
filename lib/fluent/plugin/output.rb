@@ -892,7 +892,7 @@ module Fluent
 
         raise ArgumentError, "tag must be a String: #{tag.class}" unless tag.nil? || tag.is_a?(String)
         raise ArgumentError, "time must be a Fluent::EventTime (or Integer): #{time.class}" unless time.nil? || time.is_a?(Fluent::EventTime) || time.is_a?(Integer)
-        raise ArgumentError, "record must be a Hash: #{record.class}" unless record.nil? || record.is_a?(Hash)
+        raise ArgumentError, "record must be a Hash: #{record.class}" if record.nil? || !record.is_a?(Hash)
 
         if @chunk_keys.nil? && @chunk_key_time.nil? && @chunk_key_tag.nil?
           # for tests
