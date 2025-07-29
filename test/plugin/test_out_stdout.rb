@@ -218,11 +218,10 @@ class StdoutOutputTest < Test::Unit::TestCase
   end
 
   def capture_stdout
-    tmp = $stdout
     $stdout = StringIO.new
     yield
     return $stdout.string
   ensure
-    $stdout = tmp
+    $stdout = STDOUT
   end
 end
