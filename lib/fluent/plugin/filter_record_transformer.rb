@@ -17,6 +17,9 @@
 require 'socket'
 require 'json'
 require 'ostruct'
+require 'pathname'
+require 'uri'
+require 'cgi'
 
 require 'fluent/plugin/filter'
 require 'fluent/config/error'
@@ -68,10 +71,6 @@ module Fluent::Plugin
       }
       @placeholder_expander =
         if @enable_ruby
-          # require utilities which would be used in ruby placeholders
-          require 'pathname'
-          require 'uri'
-          require 'cgi'
           RubyPlaceholderExpander.new(placeholder_expander_params)
         else
           PlaceholderExpander.new(placeholder_expander_params)
