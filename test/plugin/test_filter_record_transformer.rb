@@ -561,11 +561,11 @@ class RecordTransformerFilterTest < Test::Unit::TestCase
 
   sub_test_case 'test error record' do
     test 'invalid record for placeholders' do
-      p "1" * 80
-      Thread.list.each do |thr|
-        puts "* #{thr.inspect}, name: #{thr.name}, alive?: #{thr.alive?}, status: #{thr.status}, group: #{thr.group}, backtrace: #{thr.backtrace.inspect}"
-      end
-      p "2" * 80
+      # p "1" * 80
+      # Thread.list.each do |thr|
+      #   puts "* #{thr.inspect}, name: #{thr.name}, alive?: #{thr.alive?}, status: #{thr.status}, group: #{thr.group}, backtrace: #{thr.backtrace.inspect}"
+      # end
+      # p "2" * 80
 
       d = create_driver(%[
         enable_ruby yes
