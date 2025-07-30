@@ -37,6 +37,7 @@ module Fluent
       def initialize(*)
         super
         @_http_server = nil
+        @_http_server_thread = nil
       end
 
       def create_http_server(title, addr:, port:, logger:, default_app: nil, proto: nil, tls_opts: nil, &block)
@@ -64,7 +65,7 @@ module Fluent
           end
 
           _block_until_http_server_start do |notify|
-            thread_create(title) do
+            @_http_server_thread = thread_create(title) do
               @_http_server.start(notify)
             end
           end
@@ -91,16 +92,15 @@ module Fluent
         end
 
         _block_until_http_server_start do |notify|
-          thread_create(title) do
+          @_http_server_thread = thread_create(title) do
             @_http_server.start(notify)
           end
         end
       end
 
       def stop
-        if @_http_server
-          @_http_server.stop
-        end
+        @_http_server&.stop
+        @_http_server_thread&.kill
 
         super
       end
