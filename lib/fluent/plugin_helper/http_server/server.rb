@@ -79,11 +79,6 @@ module Fluent
         def stop
           @logger.debug('closing HTTP server')
           @server_task_queue.push(:stop)
-          @server_task.kill
-
-          @server_task_queue = nil
-          @server_task = nil
-          @server = nil
         end
 
         HttpServer::Methods::ALL.map { |e| e.downcase.to_sym }.each do |name|
