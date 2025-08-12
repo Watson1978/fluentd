@@ -52,6 +52,8 @@ Gem::Specification.new do |gem|
   # Test
   gem.add_runtime_dependency("async-http", "= 0.89.0")
   gem.add_runtime_dependency("protocol-http", "= 0.51.0")
+  gem.add_runtime_dependency("traces", "= 0.15.2")
+  gem.add_runtime_dependency("metrics", "= 0.12.2")
 
   # gems that aren't default gems as of Ruby 3.4
   gem.add_runtime_dependency("base64", ["~> 0.2"])
