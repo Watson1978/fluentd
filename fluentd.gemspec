@@ -49,6 +49,9 @@ Gem::Specification.new do |gem|
   # See https://github.com/socketry/io-stream/issues/8.
   gem.add_runtime_dependency("io-stream", "< 0.8.0")
 
+  # Test
+  gem.add_runtime_dependency("async-http", "= 0.89.0")
+
   # gems that aren't default gems as of Ruby 3.4
   gem.add_runtime_dependency("base64", ["~> 0.2"])
   gem.add_runtime_dependency("csv", ["~> 3.2"])
