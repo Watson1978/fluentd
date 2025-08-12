@@ -40,7 +40,7 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency("webrick", ["~> 1.4"])
   gem.add_runtime_dependency("zstd-ruby", ["~> 1.5"])
   gem.add_runtime_dependency("uri", '~> 1.0')
-  gem.add_runtime_dependency("async-http", "~> 0.86")
+  # gem.add_runtime_dependency("async-http", "~> 0.86")
 
   # It appears io-event >= 1.11.0 are unstable on Windows (confirmed on 1.12.1 or lower).
   # See https://github.com/fluent/fluentd/issues/5041.
