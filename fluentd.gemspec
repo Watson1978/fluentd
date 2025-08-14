@@ -77,7 +77,7 @@ Gem::Specification.new do |gem|
   end
 
   gem.add_development_dependency("rake", ["~> 13.0"])
-  gem.add_development_dependency("flexmock", ["~> 2.0"])
+  gem.add_development_dependency("flexmock", ["~> 3.0"])
   gem.add_development_dependency("parallel_tests", ["~> 0.15.3"])
   gem.add_development_dependency("simplecov", ["~> 0.7"])
   gem.add_development_dependency("rr", ["~> 3.0"])

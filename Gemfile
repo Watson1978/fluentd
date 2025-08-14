@@ -3,7 +3,6 @@ source 'https://rubygems.org/'
 gemspec
 
 gem 'benchmark'
-gem 'flexmock', '= 2.4.5'
 
 local_gemfile = File.join(File.dirname(__FILE__), "Gemfile.local")
 if File.exist?(local_gemfile)
