@@ -30,4 +30,4 @@ jobs:
       - name: Install dependencies
         run: bundle install
       - name: Run tests
-        run: bundle exec rake test TESTOPTS="-v --no-show-detail-immediately"
+        run: bundle exec rake test TESTOPTS="-v --n-workers=3 --no-show-detail-immediately"
