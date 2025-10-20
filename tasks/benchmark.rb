@@ -1,7 +1,9 @@
 require "json"
 require "fileutils"
+require "securerandom"
 
-BENCHMARK_FILE_SIZE = 1 * 1024 * 1024 * 1024
+BENCHMARK_FILE_SIZE_1GB  = 1 * 1024 * 1024 * 1024
+BENCHMARK_FILE_SIZE_10GB = 10 * 1024 * 1024 * 1024
 BENCHMARK_FILE_PATH = File.expand_path("./tmp/benchmark/data.log")
 
 namespace :benchmark do
@@ -17,7 +19,19 @@ namespace :benchmark do
 
       loop do
         f.puts data
-        break if File.size(BENCHMARK_FILE_PATH) > BENCHMARK_FILE_SIZE
+        break if File.size(BENCHMARK_FILE_PATH) > BENCHMARK_FILE_SIZE_1GB
+      end
+    end
+  end
+
+  task :prepare_10GB do
+    FileUtils.mkdir_p(File.dirname(BENCHMARK_FILE_PATH))
+    File.open(BENCHMARK_FILE_PATH, "w") do |f|
+      data = { "message": SecureRandom.hex(1024) }.to_json
+
+      loop do
+        f.puts data
+        break if File.size(BENCHMARK_FILE_PATH) > BENCHMARK_FILE_SIZE_10GB
       end
     end
   end
@@ -41,6 +55,26 @@ namespace :benchmark do
 
     Rake::Task["benchmark:clean"].invoke
   end
+
+
+  desc "Run out_forward benchmark"
+  task :"run:out_forward" => [:init, :prepare_10GB, :show_info] do
+    in_forward_pid = nil
+    Thread.new do
+      in_forward_pid = spawn "bundle exec ruby bin/fluentd --no-supervisor -c ./tasks/benchmark/conf/in_forward.conf -o ./tmp/benchmark/fluent_in_forward.log"
+    end
+
+    # Output the results with markdown format
+    puts "### out_forward with 10 GB file"
+    puts "```"
+    system "bundle exec ruby bin/fluentd -r ./tasks/benchmark/patch_in_tail.rb --no-supervisor -c ./tasks/benchmark/conf/out_forward.conf -o ./tmp/benchmark/fluent_out_forward.log"
+    puts "```"
+
+    Process.kill("TERM", in_forward_pid)
+
+    # Rake::Task["benchmark:clean"].invoke
+  end
+
 
   task :clean do
     FileUtils.rm_rf(File.dirname(BENCHMARK_FILE_PATH))
