@@ -36,39 +36,72 @@ jobs:
       shell: powershell
       run: |
         # --- 設定 ---
-        $command = 'bundle exec ruby -I"lib;test" test\plugin\test_out_forward.rb -v -n "test: Node with security is thread-safe on multi threads"'
+        $testCmd = 'bundle exec ruby -I"lib;test" test\plugin\test_out_forward.rb -v -n "/test: Create new connection per send_data|test: Node with security is thread-safe on multi threads/"'
+
         $ignorePattern = "RuntimeError: can't find unused port"
         $maxRetries = 1000
+
+        $batFile = ".\run_test.bat"
+        $stdOutLog = ".\stdout.log"
+        $stdErrLog = ".\stderr.log"
         # -----------
 
         for ($i=1; $i -le $maxRetries; $i++) {
-            Write-Host "`n=== Run: $i / $maxRetries ===" -ForegroundColor Cyan
+            Write-Host "`n=== Run: $i / $maxRetries ==="
 
-            # 時間計測開始
+            # 1. バッチファイル作成
+            Set-Content -Path $batFile -Value $testCmd -Encoding Ascii
+
+            # 念のため前のログを消しておく
+            if (Test-Path $stdOutLog) { Remove-Item $stdOutLog }
+            if (Test-Path $stdErrLog) { Remove-Item $stdErrLog }
+
             $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
-            # コマンド実行 (ログを変数に格納しつつ、標準出力とエラー出力をマージ)
-            $output = Invoke-Expression "$command 2>&1" | Out-String
+            # 2. Start-Process で実行（出力先を分ける）
+            $p = Start-Process -FilePath "cmd.exe" `
+                -ArgumentList "/c $batFile" `
+                -RedirectStandardOutput $stdOutLog `
+                -RedirectStandardError $stdErrLog `
+                -PassThru `
+                -Wait
 
-            # 時間計測終了
             $sw.Stop()
             $duration = "{0:N2}" -f $sw.Elapsed.TotalSeconds
-            Write-Host "Duration: ${duration} sec" -ForegroundColor Gray
+            Write-Host "Duration: ${duration} sec"
 
-            # 判定ロジック
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "Result: Success" -ForegroundColor Green
+            $exitCode = $p.ExitCode
+
+            # 3. ログを結合して読み込む
+            $fullOutput = ""
+            if (Test-Path $stdOutLog) {
+                $fullOutput += (Get-Content $stdOutLog -Raw)
+            }
+            if (Test-Path $stdErrLog) {
+                $errContent = (Get-Content $stdErrLog -Raw)
+                if ($errContent) {
+                    $fullOutput += "`n--- STDERR ---`n" + $errContent
+                }
+            }
+
+            # ログが空っぽだった場合の対策
+            if (-not $fullOutput) { $fullOutput = "(No output captured)" }
+
+            # 4. 判定ロジック
+            if ($exitCode -eq 0) {
+                Write-Host "Result: Success"
+                Write-Host $fullOutput
             } else {
-                # 特定のエラーメッセージが含まれているかチェック
-                if ($output -match $ignorePattern) {
-                    Write-Host "Result: Port error detected (Ignored)" -ForegroundColor Yellow
-                    # 念のためログを出力して確認できるようにする
-                    Write-Host $output
+                if ($fullOutput -match $ignorePattern) {
+                    Write-Host "Result: Port error detected (Ignored)"
+                    Write-Host $fullOutput
                 } else {
-                    Write-Host "Result: Unexpected Failure! Stopping." -ForegroundColor Red
-                    Write-Host $output # 失敗時のログを全表示
-                    exit 1 # アクションを失敗させる
+                    Write-Host "Result: Failure Detected! Stopping."
+                    Write-Host "========================================"
+                    Write-Host $fullOutput
+                    Write-Host "========================================"
+                    exit 1
                 }
             }
         }
-        Write-Host "`nAll runs completed." -ForegroundColor Green
+        Write-Host "`nAll runs completed."
