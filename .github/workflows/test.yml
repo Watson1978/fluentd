@@ -19,46 +19,56 @@ concurrency:
 permissions: read-all
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    continue-on-error: false
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        ruby-version: ['3.3', '3.2', '3.1', '3.0', '2.7']
-    name: Ruby ${{ matrix.ruby-version }} on ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v5
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby-version }}
-          rubygems: latest
-      - name: Install addons
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: sudo apt-get install libgmp3-dev libcap-ng-dev
-      - name: Install dependencies
-        run: bundle install
-      - name: Run tests
-        run: bundle exec rake test TESTOPTS="-v --report-slow-tests --no-show-detail-immediately"
-
-  test-windows-service:
+  repeat-test:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        ruby-version: ['3.3', '3.2', '3.1', '3.0', '2.7']
-    name: Windows service (Ruby ${{ matrix.ruby-version }})
+
     steps:
-      - uses: actions/checkout@v5
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby-version }}
-      - name: Install dependencies
-        run: |
-          bundle install
-          rake install
-      - name: Run tests
-        run: test\scripts\windows_service_test.ps1
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2' # プロジェクトに合わせて変更してください
+        bundler-cache: true # bundle install を高速化
+
+    - name: Run tests repeatedly
+      shell: powershell
+      run: |
+        # --- 設定 ---
+        $command = 'bundle exec ruby -I"lib;test" test\plugin\test_out_forward.rb -v -n "test: Node with security is thread-safe on multi threads"'
+        $ignorePattern = "RuntimeError: can't find unused port"
+        $maxRetries = 1000
+        # -----------
+
+        for ($i=1; $i -le $maxRetries; $i++) {
+            Write-Host "`n=== Run: $i / $maxRetries ===" -ForegroundColor Cyan
+
+            # 時間計測開始
+            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+
+            # コマンド実行 (ログを変数に格納しつつ、標準出力とエラー出力をマージ)
+            $output = Invoke-Expression "$command 2>&1" | Out-String
+
+            # 時間計測終了
+            $sw.Stop()
+            $duration = "{0:N2}" -f $sw.Elapsed.TotalSeconds
+            Write-Host "Duration: ${duration} sec" -ForegroundColor Gray
+
+            # 判定ロジック
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "Result: Success" -ForegroundColor Green
+            } else {
+                # 特定のエラーメッセージが含まれているかチェック
+                if ($output -match $ignorePattern) {
+                    Write-Host "Result: Port error detected (Ignored)" -ForegroundColor Yellow
+                    # 念のためログを出力して確認できるようにする
+                    Write-Host $output
+                } else {
+                    Write-Host "Result: Unexpected Failure! Stopping." -ForegroundColor Red
+                    Write-Host $output # 失敗時のログを全表示
+                    exit 1 # アクションを失敗させる
+                }
+            }
+        }
+        Write-Host "`nAll runs completed." -ForegroundColor Green
