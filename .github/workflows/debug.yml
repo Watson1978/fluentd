@@ -1,0 +1,59 @@
+name: Flaky Test Debug (Windows)
+
+on:
+  workflow_dispatch: # 手動実行用
+
+jobs:
+  repeat-test:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+        bundler-cache: true
+
+    - name: Run tests repeatedly
+      shell: powershell
+      run: |
+        # --- 設定 ---
+        $command = 'bundle exec ruby -I"lib;test" test\plugin\test_out_forward.rb -v -n "test: Node with security is thread-safe on multi threads"'
+        $ignorePattern = "RuntimeError: can't find unused port"
+        $maxRetries = 1000
+        # -----------
+
+        for ($i=1; $i -le $maxRetries; $i++) {
+            Write-Host "`n=== Run: $i / $maxRetries ===" -ForegroundColor Cyan
+            
+            # 時間計測開始
+            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            
+            # コマンド実行 (ログを変数に格納しつつ、標準出力とエラー出力をマージ)
+            $output = Invoke-Expression "$command 2>&1" | Out-String
+            
+            # 時間計測終了
+            $sw.Stop()
+            $duration = "{0:N2}" -f $sw.Elapsed.TotalSeconds
+            Write-Host "Duration: ${duration} sec" -ForegroundColor Gray
+
+            # 判定ロジック
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "Result: Success" -ForegroundColor Green
+            } else {
+                # 特定のエラーメッセージが含まれているかチェック
+                if ($output -match $ignorePattern) {
+                    Write-Host "Result: Port error detected (Ignored)" -ForegroundColor Yellow
+                    # 念のためログを出力して確認できるようにする
+                    Write-Host $output
+                } else {
+                    Write-Host "Result: Unexpected Failure! Stopping." -ForegroundColor Red
+                    Write-Host $output # 失敗時のログを全表示
+                    exit 1 # アクションを失敗させる
+                }
+            }
+        }
+        Write-Host "`nAll runs completed." -ForegroundColor Green
