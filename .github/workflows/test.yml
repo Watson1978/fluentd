@@ -21,6 +21,10 @@ permissions: read-all
 jobs:
   repeat-test:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby-version: ['3.4', '3.3', '3.2']
 
     steps:
     - name: Checkout
@@ -29,8 +33,8 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.2' # プロジェクトに合わせて変更してください
-        bundler-cache: true # bundle install を高速化
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: true
 
     - name: Run tests repeatedly
       shell: powershell
