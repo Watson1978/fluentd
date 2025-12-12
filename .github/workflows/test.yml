@@ -42,7 +42,8 @@ jobs:
         # --- 設定 ---
         $testCmd = 'bundle exec ruby -I"lib;test" test\plugin\test_out_forward.rb -v -n "/test: Create new connection per send_data|test: Node with security is thread-safe on multi threads/"'
 
-        $ignorePattern = "RuntimeError: can't find unused port"
+        $ignorePattern1 = "RuntimeError: can't find unused port"
+        $ignorePattern2 = "Errno::EACCES: Permission denied - bind(2)"
         $maxRetries = 1000
 
         $batFile = ".\run_test.bat"
@@ -94,10 +95,13 @@ jobs:
             # 4. 判定ロジック
             if ($exitCode -eq 0) {
                 Write-Host "Result: Success"
-                Write-Host $fullOutput
+                # Write-Host $fullOutput
             } else {
-                if ($fullOutput -match $ignorePattern) {
+                if ($fullOutput -match $ignorePattern1) {
                     Write-Host "Result: Port error detected (Ignored)"
+                    Write-Host $fullOutput
+                } elseif ($fullOutput -match $ignorePattern2) {
+                    Write-Host "Result: Errno::EACCES: Permission denied - bind(2) (Ignored)"
                     Write-Host $fullOutput
                 } else {
                     Write-Host "Result: Failure Detected! Stopping."
