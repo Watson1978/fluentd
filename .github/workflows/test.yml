@@ -37,79 +37,44 @@ jobs:
         bundler-cache: true
 
     - name: Run tests repeatedly
-      shell: powershell
+      shell: bash
       run: |
+        set +e
         # --- 設定 ---
-        $testCmd = 'bundle exec ruby -I"lib;test" test\plugin\test_out_forward.rb -v -n "/test: Create new connection per send_data|test: Node with security is thread-safe on multi threads/"'
+        test_cmd='bundle exec ruby -I"lib:test" test/plugin/test_out_forward.rb -v -n "/test: Create new connection per send_data|test: Node with security is thread-safe on multi threads/"'
 
-        $ignorePattern1 = "RuntimeError: can't find unused port"
-        $ignorePattern2 = "Errno::EACCES: Permission denied - bind(2)"
-        $maxRetries = 1000
-
-        $batFile = ".\run_test.bat"
-        $stdOutLog = ".\stdout.log"
-        $stdErrLog = ".\stderr.log"
+        ignore_pattern1="RuntimeError: can't find unused port"
+        ignore_pattern2="Errno::EACCES: Permission denied"
+        max_retries=1000
         # -----------
 
-        for ($i=1; $i -le $maxRetries; $i++) {
-            Write-Host "`n=== Run: $i / $maxRetries ==="
+        for ((i=1; i<=max_retries; i++)); do
+            echo -e "\n=== Run: $i / $maxRetries ==="
 
-            # 1. バッチファイル作成
-            Set-Content -Path $batFile -Value $testCmd -Encoding Ascii
+            start_time=$(date +%s%N)
 
-            # 念のため前のログを消しておく
-            if (Test-Path $stdOutLog) { Remove-Item $stdOutLog }
-            if (Test-Path $stdErrLog) { Remove-Item $stdErrLog }
+            output=$(eval "$test_cmd" 2>&1)
+            exit_code=$?
 
-            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            end_time=$(date +%s%N)
+            duration=$(( (end_time - start_time) / 1000000 ))
+            echo "Duration: ${duration} ms"
 
-            # 2. Start-Process で実行（出力先を分ける）
-            $p = Start-Process -FilePath "cmd.exe" `
-                -ArgumentList "/c $batFile" `
-                -RedirectStandardOutput $stdOutLog `
-                -RedirectStandardError $stdErrLog `
-                -PassThru `
-                -Wait
-
-            $sw.Stop()
-            $duration = "{0:N2}" -f $sw.Elapsed.TotalSeconds
-            Write-Host "Duration: ${duration} sec"
-
-            $exitCode = $p.ExitCode
-
-            # 3. ログを結合して読み込む
-            $fullOutput = ""
-            if (Test-Path $stdOutLog) {
-                $fullOutput += (Get-Content $stdOutLog -Raw)
-            }
-            if (Test-Path $stdErrLog) {
-                $errContent = (Get-Content $stdErrLog -Raw)
-                if ($errContent) {
-                    $fullOutput += "`n--- STDERR ---`n" + $errContent
-                }
-            }
-
-            # ログが空っぽだった場合の対策
-            if (-not $fullOutput) { $fullOutput = "(No output captured)" }
-
-            # 4. 判定ロジック
-            if ($exitCode -eq 0) {
-                Write-Host "Result: Success"
-                # Write-Host $fullOutput
-            } else {
-                if ($fullOutput -match $ignorePattern1) {
-                    Write-Host "Result: Port error detected (Ignored)"
-                    Write-Host $fullOutput
-                } elseif ($fullOutput -match $ignorePattern2) {
-                    Write-Host "Result: Errno::EACCES: Permission denied - bind(2) (Ignored)"
-                    Write-Host $fullOutput
-                } else {
-                    Write-Host "Result: Failure Detected! Stopping."
-                    Write-Host "========================================"
-                    Write-Host $fullOutput
-                    Write-Host "========================================"
+            if [ $exit_code -eq 0 ]; then
+                echo "Result: Success"
+            else
+                if [[ "$output" == *"$ignore_pattern1"* ]]; then
+                    echo "Result: Port error detected (Ignored)"
+                    echo "$output"
+                elif [[ "$output" == *"$ignore_pattern2"* ]]; then
+                    echo "Result: Permission error detected (Ignored)"
+                else
+                    echo "Result: Failure Detected! Stopping."
+                    echo "----------------------------------------"
+                    echo "$output"
+                    echo "----------------------------------------"
                     exit 1
-                }
-            }
-        }
-        Write-Host "`nAll runs completed."
+                fi
+            fi
+        done
+        echo "All runs completed."
