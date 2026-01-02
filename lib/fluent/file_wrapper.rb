@@ -21,7 +21,7 @@ else
 
   module Fluent
     module FileWrapper
-      def self.open(path, mode='r')
+      def self.open(path, mode='rb')
         io = WindowsFile.new(path, mode).io
         if block_given?
           v = yield io
