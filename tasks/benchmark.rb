@@ -13,7 +13,7 @@ namespace :benchmark do
   task :prepare_1GB do
     FileUtils.mkdir_p(File.dirname(BENCHMARK_FILE_PATH))
     File.open(BENCHMARK_FILE_PATH, "w") do |f|
-      data = { "message": "a" * 1024 }.to_json
+      data = { "message": "a" * 256 }.to_json
 
       loop do
         f.puts data
