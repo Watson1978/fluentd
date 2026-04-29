@@ -33,7 +33,13 @@ module Fluent
 
       def parse(text)
         values = text.split(@delimiter, @key_num)
-        r = Hash[@keys.zip(values)]
+        r = {}
+        i = 0
+        len = @keys.length
+        while i < len
+          r[@keys[i]] = values[i]
+          i += 1
+        end
         time, record = convert_values(parse_time(r), r)
         yield time, record
       end
