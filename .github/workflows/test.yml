@@ -107,3 +107,66 @@ jobs:
           rake install
       - name: Run tests
         run: test\scripts\windows_service_test.ps1
+
+  stress:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        instance: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    env:
+      RUBYOPT: "--disable-frozen_string_literal"
+    name: stress ${{ matrix.instance }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@0dafeac902942906541bc140009cdbf32665b601 # v1.315.0
+        with:
+          ruby-version: '3.3'
+      - name: Install dependencies
+        run: bundle install
+      - name: Show port reservations (baseline)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Get-Date -Format o
+          Get-Service -Name hns, winnat, vmcompute -ErrorAction SilentlyContinue | Format-Table -AutoSize
+          netsh interface ipv4 show dynamicport tcp
+          netsh interface ipv4 show dynamicport udp
+          netsh interface ipv4 show excludedportrange protocol=tcp
+          netsh interface ipv4 show excludedportrange protocol=udp
+      - name: Loop test_in_forward until failure or deadline
+        shell: pwsh
+        run: |
+          $deadline = (Get-Date).AddMinutes(20)
+          $i = 0
+          while ((Get-Date) -lt $deadline) {
+            $i++
+            $started = Get-Date
+            $out = bundle exec ruby -Ilib -Itest test/plugin/test_in_forward.rb 2>&1
+            $elapsed = [int]((Get-Date) - $started).TotalSeconds
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "=== FAILED at iteration $i (exit=$LASTEXITCODE, ${elapsed}s) ==="
+              Write-Host "--- key lines ---"
+              $out | Select-String -Pattern 'EACCES|EADDRINUSE|bind\(2\)' | ForEach-Object { $_.Line } | Write-Host
+              Write-Host "--- port state captured immediately after failure ---"
+              Get-Date -Format o
+              netsh interface ipv4 show excludedportrange protocol=tcp
+              netsh interface ipv4 show excludedportrange protocol=udp
+              Get-NetUDPEndpoint -ErrorAction SilentlyContinue |
+                Sort-Object LocalPort |
+                Select-Object LocalAddress, LocalPort, OwningProcess,
+                  @{ Name = 'ProcessName'; Expression = { (Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue).ProcessName } } |
+                Format-Table -AutoSize
+              Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
+                Sort-Object LocalPort |
+                Select-Object LocalAddress, LocalPort, OwningProcess |
+                Format-Table -AutoSize
+              Write-Host "--- full output of failing iteration ---"
+              $out | Write-Host
+              exit 1
+            }
+            Write-Host "iteration $i OK (${elapsed}s)"
+          }
+          Write-Host "=== completed $i iterations without failure ==="
